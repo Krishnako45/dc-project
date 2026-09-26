@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRC Error Detection & Data Transmission Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Data communication project</p>
+    <h1>CRC error detection & data transmission simulator</h1>
+    <p class="sub">Enter binary data and a generator polynomial. The app runs a real modulo-2 division to generate the CRC, simulates sending the frame, lets you introduce a transmission error, and shows the receiver detecting it.</p>
+  </header>
+
+  <div class="stage-row">
+
+    <!-- SENDER -->
+    <section class="stage" id="sender">
+      <div class="stage-title"><span class="dot"></span><h2>1. Sender</h2></div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="data">Binary data</label>
+          <input type="text" id="data" value="1101" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="gen">Generator polynomial</label>
+          <input type="text" id="gen" value="1011" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+      <p class="err-msg" id="senderErr"></p>
+
+      <div class="btn-row">
+        <button class="primary" id="calcBtn">Calculate CRC</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+
+      <div id="senderResult"><p class="empty" style="margin-top:16px;">Results will appear here after you calculate the CRC.</p></div>
+    </section>
+
+    <div class="connector"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2v10M3 8l5 5 5-5" stroke="#4FD1C5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+    <!-- CHANNEL -->
+    <section class="stage" id="channel">
+      <div class="stage-title"><span class="dot"></span><h2>2. Transmission channel</h2></div>
+      <div id="channelBody"><p class="empty">Calculate the CRC first, then send the frame through the channel.</p></div>
+    </section>
+
+    <div class="connector"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2v10M3 8l5 5 5-5" stroke="#4FD1C5" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+    <!-- RECEIVER -->
+    <section class="stage" id="receiver">
+      <div class="stage-title"><span class="dot ok"></span><h2>3. Receiver</h2></div>
+      <div id="receiverBody"><p class="empty">Waiting for a frame to arrive from the channel.</p></div>
+    </section>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
