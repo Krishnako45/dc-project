@@ -32,16 +32,7 @@ function calculateCRC(data, gen){
   return { padded, remainder, frame, steps };
 }
 
-// Randomly flips exactly one bit in a frame. Position is chosen dynamically,
-// never hardcoded, so every run can corrupt a different bit.
-function introduceError(frame){
-  const idx = Math.floor(Math.random() * frame.length);
-  const chars = frame.split('');
-  const originalBit = chars[idx];
-  const receivedBit = originalBit === '1' ? '0' : '1';
-  chars[idx] = receivedBit;
-  return { corrupted: chars.join(''), index: idx, originalBit, receivedBit };
-}
+
 
 // RECEIVER SIDE: divides the received frame by the same generator.
 // A remainder of all zeros means no error was detected.
@@ -52,9 +43,11 @@ function verifyCRC(frame, gen){
 }
 
 function validateInput(data, gen){
-  if(!data || !isBinary(data)) return 'Data must be binary (only 0s and 1s).';
-  if(!gen || !isBinary(gen) || gen.length < 2) return 'Generator must be binary and at least 2 bits.';
-  if(gen[0] !== '1') return 'Generator polynomial must start with 1.';
+  if(!data || !isBinary(data)) return 'Data must contain only 0 and 1.';
+  if(!gen || !isBinary(gen)) return 'Generator polynomial must contain only 0 and 1.';
+  if(gen.length < 2) return 'Generator polynomial must have at least 2 bits.';
+  if(gen[0] !== '1') return 'Generator polynomial must begin with 1.';
+  if(!gen.includes('1')) return 'Generator polynomial must not be all zeros.';
   return null;
 }
 
@@ -132,22 +125,60 @@ function renderChannel(){
   channelBody.innerHTML = `
     <div class="frame-flow"><span class="box">Sender: ${state.frame}</span><span class="arrow">&rarr;</span><span class="box">Channel</span><span class="arrow">&rarr;</span><span class="box">Receiver</span></div>
     <div class="btn-row">
-      <button class="primary" id="sendClean">Send normally</button>
-      <button class="danger" id="sendError">Simulate transmission error</button>
+      <button class="primary" id="sendClean">Send Normally</button>
+      <button class="danger" id="sendSingleError">Simulate Single-Bit Error</button>
+      <button class="danger" id="sendRandomError">Simulate Random Error</button>
+    </div>
+    <div id="singleBitOpts" style="display:none; margin-top:10px; align-items:center; gap:8px; flex-wrap:wrap;">
+       <label style="font-size:13px; color:var(--sub); margin:0;">Bit position (0-${state.frame.length - 1}):</label>
+       <input type="number" id="bitPosInput" min="0" max="${state.frame.length - 1}" value="0" style="width:70px; padding:6px; font-family:'IBM Plex Mono',monospace; border-radius:6px; border:1px solid var(--border); background:var(--panel2); color:var(--mono); outline:none;">
+       <button id="applySingleErr" class="danger" style="padding:6px 12px; font-size:13px;">Apply Error</button>
     </div>
     <div id="channelCompare"></div>
   `;
-  document.getElementById('sendClean').addEventListener('click', () => sendFrame(false));
-  document.getElementById('sendError').addEventListener('click', () => sendFrame(true));
+  document.getElementById('sendClean').addEventListener('click', () => {
+    document.getElementById('singleBitOpts').style.display = 'none';
+    sendFrame('clean');
+  });
+  document.getElementById('sendSingleError').addEventListener('click', () => {
+    document.getElementById('singleBitOpts').style.display = 'flex';
+  });
+  document.getElementById('sendRandomError').addEventListener('click', () => {
+    document.getElementById('singleBitOpts').style.display = 'none';
+    sendFrame('random');
+  });
+  document.getElementById('applySingleErr').addEventListener('click', () => {
+    const pos = parseInt(document.getElementById('bitPosInput').value, 10);
+    if(isNaN(pos) || pos < 0 || pos >= state.frame.length){
+       alert("Invalid bit position.");
+       return;
+    }
+    sendFrame('single', pos);
+  });
 }
 
 // Sends the transmitted frame through the simulated channel, optionally
 // corrupting one bit, then automatically hands it to the receiver.
-function sendFrame(withError){
+function sendFrame(type, pos = 0){
   const compareEl = document.getElementById('channelCompare');
 
-  if(withError){
-    const { corrupted, index, originalBit, receivedBit } = introduceError(state.frame);
+  let corrupted = state.frame;
+  let index = null;
+  let originalBit = null;
+  let receivedBit = null;
+
+  if(type === 'random' || type === 'single'){
+    if(type === 'random'){
+       index = Math.floor(Math.random() * state.frame.length);
+    } else {
+       index = pos;
+    }
+    const chars = state.frame.split('');
+    originalBit = chars[index];
+    receivedBit = originalBit === '1' ? '0' : '1';
+    chars[index] = receivedBit;
+    corrupted = chars.join('');
+    
     state.received = corrupted;
     state.errorIndex = index;
     state.originalBit = originalBit;
@@ -189,7 +220,7 @@ function renderReceiver(){
       <div class="result-card"><p class="k">Received frame</p><p class="v">${highlightBit(state.received, state.errorIndex)}</p></div>
       <div class="result-card"><p class="k">Remainder at receiver</p><p class="v">${remainder}</p></div>
     </div>
-    <div class="badge ${ok ? 'ok' : 'err'}"><span class="sq"></span>${ok ? 'No error detected' : 'Error detected'}</div>
+    <div class="badge ${ok ? 'ok' : 'err'}"><span class="sq"></span>${ok ? 'NO ERROR DETECTED' : 'ERROR DETECTED'}</div>
   `;
 }
 
